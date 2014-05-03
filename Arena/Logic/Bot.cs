@@ -8,9 +8,10 @@ namespace Arena.Logic
 {
     public class BotInfo
     {
-        public string Name { get; set; }
-        public string Version { get; set; }
-        public string Owner { get; set; }
+        public string Name { get; protected set; }
+        public string Version { get; protected set; }
+        public string Owner { get; protected set; }
+        public string Path { get; protected set; }
     }
 
     public class Bot
@@ -34,6 +35,20 @@ namespace Arena.Logic
             Sub.StartInfo.RedirectStandardInput = true;
             Sub.StartInfo.RedirectStandardOutput = true;
             Sub.StartInfo.CreateNoWindow = true;
+            Sub.StartInfo.UseShellExecute = false;
+
+            Sub.StartInfo.Arguments = "OutputInfo";
+            Sub.Start();
+            Name = Read();
+            Version = Read();
+            Owner = Read();
+            try
+            {
+                Sub.Kill();
+                Sub.WaitForExit();
+            }
+            catch { }
+            Sub.StartInfo.Arguments = string.Empty;
 
             return true;
         }
@@ -41,10 +56,6 @@ namespace Arena.Logic
         public void Start()
         {
             Sub.Start();
-
-            Name = Read();
-            Version = Read();
-            Owner = Read();
         }
 
         public void Write(string Data)
@@ -76,6 +87,13 @@ namespace Arena.Logic
             {
                 throw new Exception("Failed to read data.");
             }
+        }
+
+        public override string ToString()
+        {
+            return "Name: " + Name + Environment.NewLine +
+                   "Version: " + Version + Environment.NewLine +
+                   "Owner: " + Owner;
         }
     }
 }
