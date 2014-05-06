@@ -4,16 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{2C7AACE0-3206-422B-B509-322DFE619476}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{BEE0E403-44AF-44D8-8D3F-B3E0AC8F1CB6}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TestBots</RootNamespace>
-    <AssemblyName>TestBots</AssemblyName>
+    <RootNamespace>Bot</RootNamespace>
+    <AssemblyName>Bot</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,7 +22,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -41,18 +39,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Bot1.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="Bot.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Bot\Bot.csproj">
-      <Project>{bee0e403-44af-44d8-8d3f-b3e0ac8f1cb6}</Project>
-      <Name>Bot</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
