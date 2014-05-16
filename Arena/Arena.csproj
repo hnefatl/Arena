@@ -59,6 +59,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Logic\Bot.cs" />
+    <Compile Include="UI\Coverer.xaml.cs">
+      <DependentUpon>Coverer.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="UI\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
@@ -92,6 +96,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="UI\Coverer.xaml" />
     <Page Include="UI\MainWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
