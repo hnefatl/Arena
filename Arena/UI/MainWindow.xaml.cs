@@ -14,6 +14,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.ComponentModel;
+using System.Xml;
 
 using Arena.Logic;
 
@@ -123,7 +124,7 @@ namespace Arena.UI
             Cover.SetVisible(false);
         }
 
-        public void LoadBots(ProgressBar Bar)
+        public void LoadBots()
         {
             if (!File.Exists(BotSaveFile))
             {
@@ -131,83 +132,10 @@ namespace Arena.UI
             }
             try
             {
-                Bar.Maximum = (double)File.ReadAllLines(BotSaveFile).Length; // Increase operation count
+                XmlDocument LoadFile = new XmlDocument();
+                LoadFile.Load(BotSaveFile);
 
-                AllBots = new List<Bot>();
-                StreamReader Reader = new StreamReader(BotSaveFile);
 
-                while (true)
-                {
-                    string Filename = Reader.ReadLine();
-                    if (Filename == null)
-                        break;
-
-                    Bot New = new Bot();
-                    if (New.Initialise(Filename))
-                    {
-                        AllBots.Add(New);
-                        Bar.Value++;
-                        Thread.Sleep(1000);
-                    }
-                }
-                Reader.Close();
-
-                // Loaded all bots
-                #region Postprocessing
-                lock (Bots)
-                {
-                    Bots.Items.Clear();
-                    for (int x = 0; x < AllBots.Count; x++)
-                    {
-                        #region Find owner
-                        TreeViewItem Owner = null;
-                        for (int y = 0; y < Bots.Items.Count; y++) // Search for owner in tree
-                        {
-                            if ((string)((TreeViewItem)Bots.Items[y]).Header == AllBots[x].Owner) // Same owner
-                            {
-                                Owner = (TreeViewItem)Bots.Items[y];
-                                break;
-                            }
-                        }
-                        if (Owner == null) // Create new owner
-                        {
-                            Owner = new TreeViewItem();
-                            Owner.Header = AllBots[x].Owner;
-                            Bots.Items.Add(Owner);
-                        }
-                        #endregion
-                        #region Find name
-                        TreeViewItem Name = null;
-                        foreach (TreeViewItem n in Owner.Items)
-                        {
-                            if ((string)n.Header == AllBots[x].Name)
-                            {
-                                Name = n;
-                            }
-                        }
-                        if (Name == null)
-                        {
-                            Name = new TreeViewItem();
-                            Name.Header = AllBots[x].Name;
-                            Owner.Items.Add(Name);
-                        }
-                        #endregion
-                        BotTreeViewItem NewBot = new BotTreeViewItem(AllBots[x]);
-                        NewBot.MouseDoubleClick += BotSelected;
-                        Name.Items.Add(NewBot);
-                    }
-                    #region Add ToolTips
-                    for (int x = 0; x < Bots.Items.Count; x++)
-                    {
-                        (Bots.Items[x] as TreeViewItem).ToolTip = "Bots: " + (Bots.Items[x] as TreeViewItem).Items.Count;
-                        for (int y = 0; y < ((TreeViewItem)Bots.Items[x]).Items.Count; y++)
-                        {
-                            ((TreeViewItem)(((TreeViewItem)Bots.Items[x]).Items[y])).ToolTip = "Versions: " + ((TreeViewItem)(((TreeViewItem)Bots.Items[x]).Items[y])).Items.Count;
-                        }
-                    }
-                    #endregion
-                }
-                #endregion
             }
             catch
             {

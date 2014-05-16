@@ -1,0 +1,8 @@
+﻿<UserControl x:Class="Arena.UI.Coverer"
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Grid>
+        <Rectangle x:Name="Cover" Visibility="Hidden" Opacity="0.5" Fill="White" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <ProgressBar x:Name="Bar" Visibility="Hidden" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    </Grid>
+</UserControl>
