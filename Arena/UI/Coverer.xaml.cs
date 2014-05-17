@@ -27,6 +27,8 @@ namespace Arena.UI
             InitializeComponent();
 
             Lock = new Mutex();
+
+            SetVisible(false);
         }
 
         public void SetVisible(bool Visible)
@@ -35,8 +37,13 @@ namespace Arena.UI
             {
                 Lock.WaitOne();
 
+                Visibility = Visible ? Visibility.Visible : Visibility.Hidden;
+                IsHitTestVisible = Visible;
+
                 Cover.Visibility = Visible ? Visibility.Visible : Visibility.Hidden;
+                Cover.IsHitTestVisible = Visible;
                 Bar.Visibility = Visible ? Visibility.Visible : Visibility.Hidden;
+                Bar.IsHitTestVisible = Visible;
 
                 Lock.ReleaseMutex();
             }

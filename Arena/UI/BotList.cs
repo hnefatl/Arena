@@ -14,7 +14,108 @@ namespace Arena.UI
         */
         protected Dictionary<string, Dictionary<string, Dictionary<string, string>>> Inner { get; set; }
 
-        public void AddBot(string OwnerName, string BotName, string Version, string BotPath)
+        protected new List<object> Items { get; set; }
+
+        #region Add Methods
+        /// <summary>
+        /// Adds an Owner to the view
+        /// </summary>
+        /// <returns>True if an Owner was addded, else False</returns>
+        public bool AddOwner(string OwnerName)
+        {
+            if (Dispatcher.CheckAccess())
+            {
+                #region Sanity check - Arguments aren't empty
+                if (OwnerName == string.Empty)
+                {
+                    throw new Exception("At least one of the arguments was empty.");
+                }
+                #endregion
+
+                #region Add Owner
+
+                if (!Inner.ContainsKey(OwnerName))
+                {
+                    Inner.Add(OwnerName, new Dictionary<string, Dictionary<string, string>>());
+                    Items.Add(new TreeViewItem()
+                    {
+                        Header = OwnerName,
+                    });
+                    return true;
+                }
+                return false;
+                
+                #endregion
+            }
+            else
+            {
+                return (bool)Dispatcher.Invoke((Func<string, bool>)AddOwner, new object[] { OwnerName });
+            }
+        }
+        /// <summary>
+        /// Adds a Bot to the view
+        /// </summary>
+        /// <returns>True if a Bot was addded, else False</returns>
+        public bool AddBot(string OwnerName, string BotName)
+        {
+            if (Dispatcher.CheckAccess())
+            {
+                #region Sanity check - Arguments aren't empty
+                if (OwnerName == string.Empty || BotName == string.Empty)
+                {
+                    throw new Exception("At least one of the arguments was empty.");
+                }
+                #endregion
+
+                #region Add Bots
+
+                if (!Inner.ContainsKey(OwnerName))
+                {
+                    Inner.Add(OwnerName, new Dictionary<string, Dictionary<string, string>>());
+                    Items.Add(new TreeViewItem()
+                    {
+                        Header = OwnerName,
+                    });
+                }
+                #region Find OwnerItem
+                TreeViewItem OwnerItem = null;
+                for (int x = 0; x < Items.Count; x++)
+                {
+                    if ((string)((TreeViewItem)Items[x]).Header == OwnerName)
+                    {
+                        OwnerItem = (TreeViewItem)Items[x];
+                        break;
+                    }
+                }
+                #endregion
+                if (!Inner[OwnerName].ContainsKey(BotName))
+                {
+                    Inner[OwnerName].Add(BotName, new Dictionary<string, string>());
+                    OwnerItem.Items.Add(new TreeViewItem()
+                    {
+                        Header = BotName,
+                    });
+                    // Only update tooltips if we've added a new Bot
+                    #region Update Category ToolTips (Bot)
+                    OwnerItem.ToolTip = "Versions: " + (Convert.ToInt32(Split((string)OwnerItem.ToolTip, ' ')[1]) + 1); // Add one to the current bot number (have to extract it from the string)
+                    #endregion
+
+                    return true;
+                }
+                return false;
+
+                #endregion
+            }
+            else
+            {
+                return (bool)Dispatcher.Invoke((Func<string, string, bool>)AddBot, new object[] { OwnerName, BotName });
+            }
+        }
+        /// <summary>
+        /// Adds a Version to the view
+        /// </summary>
+        /// <returns>True if a Version was addded, else False</returns>
+        public bool AddBotVersion(string OwnerName, string BotName, string Version, string BotPath)
         {
             if (Dispatcher.CheckAccess())
             {
@@ -69,6 +170,7 @@ namespace Arena.UI
                     }
                 }
                 #endregion
+                bool AddedVersionItem = false;
                 TreeViewItem VersionItem = null;
                 if (!Inner[OwnerName][BotName].ContainsKey(Version))    // Doesn't exist already - add it
                 {
@@ -82,6 +184,8 @@ namespace Arena.UI
                     #region Update Category ToolTips (Version)
                     BotItem.ToolTip = "Versions: " + (Convert.ToInt32(Split((string)BotItem.ToolTip, ' ')[1]) + 1); // Add one to the current version number (have to extract it from the string)
                     #endregion
+
+                    AddedVersionItem = true;
                 }
                 else                                                    // Does exist already - overwrite it
                 {
@@ -105,15 +209,23 @@ namespace Arena.UI
                     ToolTip = BotPath,
                 };
 
+                return AddedVersionItem;
+
                 #endregion
             }
             else
             {
-                Dispatcher.Invoke((Action<string, string, string, string>)AddBot, new object[] { OwnerName, BotName, Version, BotPath });
+                return (bool)Dispatcher.Invoke((Func<string, string, string, string, bool>)AddBotVersion, new object[] { OwnerName, BotName, Version, BotPath });
             }
         }
+        #endregion
 
-        public void RemoveOwner(string OwnerName)
+        #region Remove Methods
+        /// <summary>
+        /// Removes an Owner from the view
+        /// </summary>
+        /// <returns>True if an Owner was added, else False</returns>
+        public bool RemoveOwner(string OwnerName)
         {
             if (Dispatcher.CheckAccess())
             {
@@ -131,18 +243,24 @@ namespace Arena.UI
                     #region Remove Virtual
                     Inner.Remove(OwnerName);
                     #endregion
+                    return true;
                 }
                 catch
                 {
                     // Don't care about any exceptions - if it doesn't exist then we can't remove it
+                    return false;
                 }
             }
             else
             {
-                Dispatcher.Invoke((Action<string>)RemoveOwner, OwnerName);
+                return (bool)Dispatcher.Invoke((Func<string, bool>)RemoveOwner, OwnerName);
             }
         }
-        public void RemoveBot(string OwnerName, string BotName)
+        /// <summary>
+        /// Removes a Bot from the view
+        /// </summary>
+        /// <returns>True if a Bot was added, else False</returns>
+        public bool RemoveBot(string OwnerName, string BotName)
         {
             if (Dispatcher.CheckAccess())
             {
@@ -177,18 +295,25 @@ namespace Arena.UI
                         }
                     }
                     #endregion
+
+                    return true;
                 }
                 catch
                 {
                     // Don't care about any exceptions - if it doesn't exist then we can't remove it
+                    return false;
                 }
             }
             else
             {
-                Dispatcher.Invoke((Action<string, string>)RemoveBot, new object[] { OwnerName, BotName });
+                return (bool)Dispatcher.Invoke((Func<string, string, bool>)RemoveBot, new object[] { OwnerName, BotName });
             }
         }
-        public void RemoveBotVersion(string OwnerName, string BotName, string Version)
+        /// <summary>
+        /// Removes a Version from the view
+        /// </summary>
+        /// <returns>True if a Version was added, else False</returns>
+        public bool RemoveBotVersion(string OwnerName, string BotName, string Version)
         {
             if (Dispatcher.CheckAccess())
             {
@@ -235,19 +360,22 @@ namespace Arena.UI
                         }
                     }
                     #endregion
+                    return true;
                 }
                 catch
                 {
                     // Don't care about any exceptions - if it doesn't exist then we can't remove it
+                    return false;
                 }
             }
             else
             {
-                Dispatcher.Invoke((Action<string, string, string>)RemoveBotVersion, new object[] { OwnerName, BotName, Version });
+                return (bool)Dispatcher.Invoke((Func<string, string, string, bool>)RemoveBotVersion, new object[] { OwnerName, BotName, Version });
             }
         }
+        #endregion
 
-        public string GetBot(string OwnerName, string BotName, string Version)
+        public string GetBotPath(string OwnerName, string BotName, string Version)
         {
             return Inner[OwnerName][BotName][Version];
         }
