@@ -6,7 +6,7 @@ using System.Windows.Controls;
 
 namespace Arena.UI
 {
-    public class BotList
+    public partial class BotList
         : TreeView
     {
         /* Maps to:
