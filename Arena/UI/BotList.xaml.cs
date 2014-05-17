@@ -33,8 +33,6 @@ namespace Arena.UI
             BotContextMenu = new ContextMenu();
             VersionContextMenu = new ContextMenu();
 
-            Items = new ItemCollection();
-
             ContextMenu = BaseContextMenu;
             Inner = new Dictionary<string, Dictionary<string, Dictionary<string, string>>>();
         }
