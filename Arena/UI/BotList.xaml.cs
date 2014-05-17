@@ -14,8 +14,6 @@ namespace Arena.UI
         */
         protected Dictionary<string, Dictionary<string, Dictionary<string, string>>> Inner { get; set; }
 
-        new private ItemCollection Items { get; set; }
-
         #region ContextMenus
         public ContextMenu BaseContextMenu { get; set; }
         public ContextMenu OwnerContextMenu { get; set; }
@@ -28,6 +26,8 @@ namespace Arena.UI
         /// </summary>
         public BotList()
         {
+            InitializeComponent();
+
             BaseContextMenu = new ContextMenu();
             OwnerContextMenu = new ContextMenu();
             BotContextMenu = new ContextMenu();
@@ -103,7 +103,7 @@ namespace Arena.UI
                 TreeViewItem OwnerItem = null;
                 for (int x = 0; x < Items.Count; x++)
                 {
-                    if ((string)((TreeViewItem)Items[x]).Header == OwnerName)
+                    if ((string)(((TreeViewItem)Items[x]).Header) == OwnerName)
                     {
                         OwnerItem = (TreeViewItem)Items[x];
                         break;
@@ -120,7 +120,14 @@ namespace Arena.UI
                     });
                     // Only update tooltips if we've added a new Bot
                     #region Update Category ToolTips (Bot)
-                    OwnerItem.ToolTip = "Versions: " + (Convert.ToInt32(Split((string)OwnerItem.ToolTip, ' ')[1]) + 1); // Add one to the current bot number (have to extract it from the string)
+                    if (OwnerItem.ToolTip != null)
+                    {
+                        OwnerItem.ToolTip = "Bots: " + (Convert.ToInt32(Split((string)OwnerItem.ToolTip, ' ')[1]) + 1); // Add one to the current bot number (have to extract it from the string)
+                    }
+                    else
+                    {
+                        OwnerItem.ToolTip = "Bots: 1";
+                    }
                     #endregion
 
                     return true;
@@ -163,7 +170,7 @@ namespace Arena.UI
                 TreeViewItem OwnerItem = null;
                 for (int x = 0; x < Items.Count; x++)
                 {
-                    if ((string)((TreeViewItem)Items[x]).Header == OwnerName)
+                    if ((string)(((TreeViewItem)Items[x]).Header) == OwnerName)
                     {
                         OwnerItem = (TreeViewItem)Items[x];
                         break;
@@ -179,22 +186,29 @@ namespace Arena.UI
                     });
                     // Only update tooltips if we've added a new Bot
                     #region Update Category ToolTips (Bot)
-                    OwnerItem.ToolTip = "Versions: " + (Convert.ToInt32(Split((string)OwnerItem.ToolTip, ' ')[1]) + 1); // Add one to the current bot number (have to extract it from the string)
+                    if (OwnerItem.ToolTip != null)
+                    {
+                        OwnerItem.ToolTip = "Bots: " + (Convert.ToInt32(Split((string)OwnerItem.ToolTip, ' ')[1]) + 1); // Add one to the current bot number (have to extract it from the string)
+                    }
+                    else
+                    {
+                        OwnerItem.ToolTip = "Bots: 1";
+                    }
                     #endregion
                 }
                 #region Find BotItem
                 TreeViewItem BotItem = null;
                 for (int x = 0; x < OwnerItem.Items.Count; x++)
                 {
-                    if ((string)((TreeViewItem)OwnerItem.Items[x]).Header == BotName)
+                    if ((string)(((TreeViewItem)OwnerItem.Items[x]).Header) == BotName)
                     {
-                        BotItem = (TreeViewItem)Items[x];
+                        BotItem = (TreeViewItem)OwnerItem.Items[x];
                         break;
                     }
                 }
                 #endregion
                 bool AddedVersionItem = false;
-                TreeViewItem VersionItem = null;
+                TreeViewItem VersionItem = new TreeViewItem();
                 if (!Inner[OwnerName][BotName].ContainsKey(Version))    // Doesn't exist already - add it
                 {
                     Inner[OwnerName][BotName].Add(Version, BotPath);
@@ -205,7 +219,14 @@ namespace Arena.UI
 
                     // Only update tooltips if we've added a new Version
                     #region Update Category ToolTips (Version)
-                    BotItem.ToolTip = "Versions: " + (Convert.ToInt32(Split((string)BotItem.ToolTip, ' ')[1]) + 1); // Add one to the current version number (have to extract it from the string)
+                    if (BotItem.ToolTip != null)
+                    {
+                        BotItem.ToolTip = "Versions: " + (Convert.ToInt32(Split((string)OwnerItem.ToolTip, ' ')[1]) + 1); // Add one to the current bot number (have to extract it from the string)
+                    }
+                    else
+                    {
+                        BotItem.ToolTip = "Versions: 1";
+                    }
                     #endregion
 
                     AddedVersionItem = true;
@@ -215,7 +236,7 @@ namespace Arena.UI
                     Inner[OwnerName][BotName][Version] = BotPath;
                 }
                 #region Find VersionItem
-                if (VersionItem != null)
+                if (!AddedVersionItem)
                 {
                     for (int x = 0; x < BotItem.Items.Count; x++)
                     {
@@ -226,12 +247,9 @@ namespace Arena.UI
                     }
                 }
                 #endregion
-                VersionItem = new TreeViewItem()
-                {
-                    Header = Version,
-                    ToolTip = BotPath,
-                    ContextMenu = VersionContextMenu,
-                };
+                VersionItem.Header = Version;
+                VersionItem.ToolTip = "Path: " + BotPath;
+                VersionItem.ContextMenu = VersionContextMenu;
 
                 return AddedVersionItem;
 
