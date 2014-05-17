@@ -59,7 +59,7 @@ namespace Arena.UI
 
         public MainWindow()
         {
-            BotSaveFile = "SavedBots";
+            BotSaveFile = "SavedBots.xml";
 
             Initialized += new EventHandler((object sender, EventArgs e) =>
                                             {
@@ -91,40 +91,7 @@ namespace Arena.UI
 
         protected void WindowInitialised()
         {
-            /*
-            if (Bars.Dispatcher.CheckAccess())
-            {
-                SetCovererVisibility(true);
-
-                Bars.AddProgressBar("LoadBots");
-                
-                int CompletedTasks=0;
-                BackgroundWorker LoadBotsWorker=new BackgroundWorker();
-                LoadBotsWorker.DoWork+= (Action)(()=>
-                                                 {
-                                                 	LoadBots(Bars.GetProgressBar("LoadBots"));
-                                                 });
-                LoadBotsWorker.ProgressChanged+= (Action)(()=>
-                                                          {
-                                                          	Bars.GetProgressBar("LoadBots").Value++;
-                                                          });
-                LoadBotsWorker.RunWorkerCompleted+=(Action)(()=>
-                                                            {
-                                                            	lock(CompletedTasks)
-                                                            	{
-                                                            		CompletedTasks++;
-                                                            		if(CompletedTasks>=1)
-                                                            		{
-                                                            			SetCovererVisibility(false);
-                                                            		}
-                                                            	}
-                                                            });
-            }
-            else
-            {
-                Bars.Dispatcher.Invoke((Action)WindowInitialised);
-            }
-            */
+            LoadBots();
         }
         protected void WindowClosing()
         {
@@ -151,15 +118,15 @@ namespace Arena.UI
                 LoadFile.Load(BotSaveFile);
                 LoadFile.Normalize();
 
-                XmlNodeList Owners = LoadFile.SelectNodes("Owner");
+                XmlNodeList Owners = LoadFile.SelectSingleNode("/SavedBots").SelectNodes("Owner");
                 for (int x = 0; x < Owners.Count; x++)
                 {
                     string OwnerName = Owners[x].Attributes["Name"].Value;
-                    XmlNodeList Bots = Owners[x].SelectNodes("/Bot");
+                    XmlNodeList Bots = Owners[x].SelectNodes("Bot");
                     for (int y = 0; y < Bots.Count; y++)
                     {
                         string BotName = Bots[x].Attributes["Name"].Value;
-                        XmlNodeList Versions = Bots[y].SelectNodes("/Version");
+                        XmlNodeList Versions = Bots[y].SelectNodes("Version");
                         for (int z = 0; z < Versions.Count; z++)
                         {
                             string Version = Versions[z].Attributes["Value"].Value;
