@@ -14,7 +14,27 @@ namespace Arena.UI
         */
         protected Dictionary<string, Dictionary<string, Dictionary<string, string>>> Inner { get; set; }
 
-        protected new List<object> Items { get; set; }
+        new private ItemCollection Items { get; set; }
+
+        #region ContextMenus
+        public ContextMenu BaseContextMenu { get; set; }
+        public ContextMenu OwnerContextMenu { get; set; }
+        public ContextMenu BotContextMenu { get; set; }
+        public ContextMenu VersionContextMenu { get; set; }
+        #endregion
+
+        /// <summary>
+        /// NOTE: It is the user's responsibilty to fill in the ContextMenu controls
+        /// </summary>
+        public BotList()
+        {
+            BaseContextMenu = new ContextMenu();
+            OwnerContextMenu = new ContextMenu();
+            BotContextMenu = new ContextMenu();
+            VersionContextMenu = new ContextMenu();
+
+            ContextMenu = BaseContextMenu;
+        }
 
         #region Add Methods
         /// <summary>
@@ -40,11 +60,12 @@ namespace Arena.UI
                     Items.Add(new TreeViewItem()
                     {
                         Header = OwnerName,
+                        ContextMenu = OwnerContextMenu,
                     });
                     return true;
                 }
                 return false;
-                
+
                 #endregion
             }
             else
@@ -94,6 +115,7 @@ namespace Arena.UI
                     OwnerItem.Items.Add(new TreeViewItem()
                     {
                         Header = BotName,
+                        ContextMenu = BotContextMenu,
                     });
                     // Only update tooltips if we've added a new Bot
                     #region Update Category ToolTips (Bot)
@@ -207,6 +229,7 @@ namespace Arena.UI
                 {
                     Header = Version,
                     ToolTip = BotPath,
+                    ContextMenu = VersionContextMenu,
                 };
 
                 return AddedVersionItem;

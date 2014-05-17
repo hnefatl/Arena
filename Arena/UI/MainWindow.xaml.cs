@@ -72,6 +72,21 @@ namespace Arena.UI
                                                                     });
 
             InitializeComponent();
+
+            #region Prepare BotList ContextMenus
+            Bots.BaseContextMenu = new ContextMenu();
+            Bots.BaseContextMenu.Items.Add(new MenuItem()
+            {
+                Header = "Add Owner",
+            });
+            ((MenuItem)Bots.BaseContextMenu.Items[0]).Click += AddOwnerHandler;
+
+            #endregion
+        }
+
+        protected void AddOwnerHandler(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show(sender.GetType().ToString());
         }
 
         protected void WindowInitialised()
@@ -134,8 +149,25 @@ namespace Arena.UI
             {
                 XmlDocument LoadFile = new XmlDocument();
                 LoadFile.Load(BotSaveFile);
+                LoadFile.Normalize();
 
-
+                XmlNodeList Owners = LoadFile.SelectNodes("Owner");
+                for (int x = 0; x < Owners.Count; x++)
+                {
+                    string OwnerName = Owners[x].Attributes["Name"].Value;
+                    XmlNodeList Bots = Owners[x].SelectNodes("/Bot");
+                    for (int y = 0; y < Bots.Count; y++)
+                    {
+                        string BotName = Bots[x].Attributes["Name"].Value;
+                        XmlNodeList Versions = Bots[y].SelectNodes("/Version");
+                        for (int z = 0; z < Versions.Count; z++)
+                        {
+                            string Version = Versions[z].Attributes["Value"].Value;
+                            string BotPath = Versions[z].InnerText;
+                            this.Bots.AddBotVersion(OwnerName, BotName, Version, BotPath);
+                        }
+                    }
+                }
             }
             catch
             {
