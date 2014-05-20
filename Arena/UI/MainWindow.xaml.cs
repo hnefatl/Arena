@@ -39,7 +39,6 @@ namespace Arena.UI
 
         protected override void OnInitialized(EventArgs e)
         {
-            #region Prepare BotList ContextMenus
             #region BaseContextMenu
             ContextMenu BaseContextMenu = new ContextMenu();
             #region AddOwner
@@ -52,25 +51,6 @@ namespace Arena.UI
             #endregion
             #endregion
 
-            #region OwnerContextMenu
-            ContextMenu OwnerContextMenu = new ContextMenu();
-            #region AddBot
-            MenuItem AddBot = new MenuItem();
-            AddBot.Width = double.NaN;
-            AddBot.Height = double.NaN;
-            AddBot.Header = "Add Bot";
-            AddBot.Click += AddBotEventHandler;
-            OwnerContextMenu.Items.Add(AddBot);
-            #endregion
-            #endregion
-
-            ContextMenu BotContextMenu = new ContextMenu();
-
-            ContextMenu VersionContextMenu = new ContextMenu();
-
-
-            Bots.SetContextMenus(BaseContextMenu, OwnerContextMenu, BotContextMenu, VersionContextMenu);
-            #endregion
 
             WindowInitialised();
 
@@ -91,26 +71,10 @@ namespace Arena.UI
             bool? Result = Dialog.ShowDialog();
             if (Result.HasValue && Result.Value) // Pressed Ok
             {
-                if (!Bots.AddOwner(Dialog.Input)) // Add the owner
+                OwnerTreeViewItem Temp;
+                if (!Bots.AddOwner(Dialog.Input, out Temp)) // Add the owner
                 {
                     MessageBox.Show("An Owner with that name already exists.", "Error");
-                }
-            }
-            else
-            {
-                return;
-            }
-        }
-        protected void AddBotEventHandler(object sender, RoutedEventArgs e)
-        {
-            StringInputDialog Dialog = new StringInputDialog();
-            Dialog.Prompt = "Bot Name:";
-            bool? Result = Dialog.ShowDialog();
-            if (Result.HasValue && Result.Value) // Pressed Ok
-            {
-                if (!Bots.AddOwner(Dialog.Input)) // Add the owner
-                {
-                    MessageBox.Show("A bot with that name already exists under this owner.", "Error");
                 }
             }
             else
@@ -169,7 +133,8 @@ namespace Arena.UI
                         {
                             string Version = Versions[z].Attributes["Value"].Value;
                             string BotPath = Versions[z].InnerText;
-                            this.Bots.AddBotVersion(OwnerName, BotName, Version, BotPath);
+                            VersionTreeViewItem Temp;
+                            this.Bots.AddVersion(OwnerName, BotName, Version, BotPath, out Temp);
 
                             Cover.ExecuteOnBar((BarExecutable)((ProgressBar Bar) =>
                             {

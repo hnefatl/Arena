@@ -3,9 +3,117 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Windows.Controls;
+using System.Windows;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using System.ComponentModel;
+
+using Arena.UI.Dialogs;
 
 namespace Arena.UI
 {
+    public class OwnerTreeViewItem
+        : TreeViewItem
+    {
+        public new BotList Parent
+        {
+            get
+            {
+                return (BotList)base.Parent;
+            }
+        }
+
+        public OwnerTreeViewItem(string Header)
+        {
+            ToolTip = null;
+            ContextMenu = new ContextMenu();
+            this.Header = Header;
+            #region AddBot
+            MenuItem AddBot = new MenuItem();
+            AddBot.Width = double.NaN;
+            AddBot.Height = double.NaN;
+            AddBot.Header = "Add Bot";
+            AddBot.Click += AddBot_Handler;
+            ContextMenu.Items.Add(AddBot);
+            #endregion
+            #region Delete
+            MenuItem Delete = new MenuItem();
+            Delete.Width = double.NaN;
+            Delete.Height = double.NaN;
+            Delete.Header = "Delete";
+            Delete.Click += Delete_Handler;
+            #endregion
+        }
+
+        protected void AddBot_Handler(object sender, RoutedEventArgs e)
+        {
+            StringInputDialog Dialog = new StringInputDialog();
+            Dialog.Prompt = "Bot Name:";
+            bool? Result = Dialog.ShowDialog();
+            if (Result.HasValue && Result.Value) // Pressed Ok
+            {
+                BotTreeViewItem Temp;
+                if (!Parent.AddBot((string)this.Header, Dialog.Input, out Temp)) // Add the owner
+                {
+                    MessageBox.Show("A bot with that name already exists under this owner.", "Error");
+                }
+            }
+            else
+            {
+                return;
+            }
+        }
+        protected void Delete_Handler(object sender, EventArgs e)
+        {
+            Parent.RemoveOwner((string)this.Header);
+        }
+    }
+
+    public class BotTreeViewItem
+        : TreeViewItem
+    {
+        public new OwnerTreeViewItem Parent
+        {
+            get
+            {
+                return (OwnerTreeViewItem)base.Parent;
+            }
+        }
+
+        public BotTreeViewItem(string Header)
+        {
+            this.Header = Header;
+            ToolTip = null;
+            ContextMenu = new ContextMenu();
+        }
+    }
+
+    public class VersionTreeViewItem
+        : TreeViewItem
+    {
+        public new BotTreeViewItem Parent
+        {
+            get
+            {
+                return (BotTreeViewItem)base.Parent;
+            }
+        }
+
+        public VersionTreeViewItem(string Header)
+        {
+            this.Header = Header;
+            ToolTip = null;
+            ContextMenu = new ContextMenu();
+        }
+    }
+
     public partial class BotList
         : TreeView
     {
@@ -14,16 +122,6 @@ namespace Arena.UI
         */
         protected Dictionary<string, Dictionary<string, Dictionary<string, string>>> Inner { get; set; }
 
-        #region ContextMenus
-        public ContextMenu BaseContextMenu { get; set; }
-        public ContextMenu OwnerContextMenu { get; set; }
-        public ContextMenu BotContextMenu { get; set; }
-        public ContextMenu VersionContextMenu { get; set; }
-        #endregion
-
-        /// <summary>
-        /// NOTE: It is the user's responsibilty to fill in the ContextMenu controls
-        /// </summary>
         public BotList()
         {
             InitializeComponent();
@@ -31,23 +129,15 @@ namespace Arena.UI
             Inner = new Dictionary<string, Dictionary<string, Dictionary<string, string>>>();
         }
 
-        public void SetContextMenus(ContextMenu BaseContextMenu, ContextMenu OwnerContextMenu, ContextMenu BotContextMenu, ContextMenu VersionContextMenu)
-        {
-            this.BaseContextMenu = BaseContextMenu;
-            this.OwnerContextMenu = OwnerContextMenu;
-            this.BotContextMenu = BotContextMenu;
-            this.VersionContextMenu = VersionContextMenu;
-
-            ContextMenu = BaseContextMenu;
-        }
-
         #region Add Methods
+        private delegate bool AddOwnerDelegate(string OwnerName, out OwnerTreeViewItem New);
         /// <summary>
         /// Adds an Owner to the view
         /// </summary>
         /// <returns>True if an Owner was addded, else False</returns>
-        public bool AddOwner(string OwnerName)
+        public bool AddOwner(string OwnerName, out OwnerTreeViewItem New)
         {
+            New = null; // Temp value
             if (Dispatcher.CheckAccess())
             {
                 #region Sanity check - Arguments aren't empty
@@ -62,28 +152,37 @@ namespace Arena.UI
                 if (!Inner.ContainsKey(OwnerName))
                 {
                     Inner.Add(OwnerName, new Dictionary<string, Dictionary<string, string>>());
-                    Items.Add(new TreeViewItem()
-                    {
-                        Header = OwnerName,
-                        ContextMenu = OwnerContextMenu,
-                    });
+                    New = new OwnerTreeViewItem(OwnerName);
+                    Items.Add(New);
                     return true;
                 }
+                foreach (TreeViewItem Item in Items)
+                {
+                    if ((string)Item.Header == OwnerName) // Find the Owner
+                    {
+                        New = (OwnerTreeViewItem)Item;
+                        break;
+                    }
+                }
+
                 return false;
 
                 #endregion
             }
             else
             {
-                return (bool)Dispatcher.Invoke((Func<string, bool>)AddOwner, new object[] { OwnerName });
+                return (bool)Dispatcher.Invoke((AddOwnerDelegate)AddOwner, new object[] { OwnerName, New });
             }
         }
+
+        private delegate bool AddBotDelegate(string OwnerName, string BotName, out BotTreeViewItem New);
         /// <summary>
         /// Adds a Bot to the view
         /// </summary>
         /// <returns>True if a Bot was addded, else False</returns>
-        public bool AddBot(string OwnerName, string BotName)
+        public bool AddBot(string OwnerName, string BotName, out BotTreeViewItem New)
         {
+            New = null; // Temp value
             if (Dispatcher.CheckAccess())
             {
                 #region Sanity check - Arguments aren't empty
@@ -95,46 +194,34 @@ namespace Arena.UI
 
                 #region Add Bots
 
-                if (!Inner.ContainsKey(OwnerName))
-                {
-                    Inner.Add(OwnerName, new Dictionary<string, Dictionary<string, string>>());
-                    Items.Add(new TreeViewItem()
-                    {
-                        Header = OwnerName,
-                    });
-                }
-                #region Find OwnerItem
-                TreeViewItem OwnerItem = null;
-                for (int x = 0; x < Items.Count; x++)
-                {
-                    if ((string)(((TreeViewItem)Items[x]).Header) == OwnerName)
-                    {
-                        OwnerItem = (TreeViewItem)Items[x];
-                        break;
-                    }
-                }
-                #endregion
+                OwnerTreeViewItem Owner;
+                AddOwner(OwnerName, out Owner);
                 if (!Inner[OwnerName].ContainsKey(BotName))
                 {
                     Inner[OwnerName].Add(BotName, new Dictionary<string, string>());
-                    OwnerItem.Items.Add(new TreeViewItem()
-                    {
-                        Header = BotName,
-                        ContextMenu = BotContextMenu,
-                    });
+                    New = new BotTreeViewItem(BotName);
+                    Owner.Items.Add(New);
                     // Only update tooltips if we've added a new Bot
                     #region Update Category ToolTips (Bot)
-                    if (OwnerItem.ToolTip != null)
+                    try
                     {
-                        OwnerItem.ToolTip = "Bots: " + (Convert.ToInt32(Split((string)OwnerItem.ToolTip, ' ')[1]) + 1); // Add one to the current bot number (have to extract it from the string)
+                        Owner.ToolTip = "Bots: " + (Convert.ToInt32(Split((string)Owner.ToolTip, ' ')[1]) + 1); // Add one to the current bot number (have to extract it from the string)
                     }
-                    else
+                    catch
                     {
-                        OwnerItem.ToolTip = "Bots: 1";
+                        Owner.ToolTip = "Bots: 1";
                     }
                     #endregion
 
                     return true;
+                }
+                foreach (BotTreeViewItem Item in Owner.Items)
+                {
+                    if ((string)Item.Header == BotName)
+                    {
+                        New = Item;
+                        break;
+                    }
                 }
                 return false;
 
@@ -142,15 +229,18 @@ namespace Arena.UI
             }
             else
             {
-                return (bool)Dispatcher.Invoke((Func<string, string, bool>)AddBot, new object[] { OwnerName, BotName });
+                return (bool)Dispatcher.Invoke((AddBotDelegate)AddBot, new object[] { OwnerName, BotName, New });
             }
         }
+
+        private delegate bool AddVersionDelegate(string OwnerName, string BotName, string Version, string BotPath, out VersionTreeViewItem New);
         /// <summary>
         /// Adds a Version to the view
         /// </summary>
         /// <returns>True if a Version was addded, else False</returns>
-        public bool AddBotVersion(string OwnerName, string BotName, string Version, string BotPath)
+        public bool AddVersion(string OwnerName, string BotName, string Version, string BotPath, out VersionTreeViewItem New)
         {
+            New = null;
             if (Dispatcher.CheckAccess())
             {
                 #region Sanity check - Arguments aren't empty
@@ -162,74 +252,27 @@ namespace Arena.UI
 
                 #region Add Bots
 
-                if (!Inner.ContainsKey(OwnerName))
-                {
-                    Inner.Add(OwnerName, new Dictionary<string, Dictionary<string, string>>());
-                    Items.Add(new TreeViewItem()
-                    {
-                        Header = OwnerName,
-                    });
-                }
-                #region Find OwnerItem
-                TreeViewItem OwnerItem = null;
-                for (int x = 0; x < Items.Count; x++)
-                {
-                    if ((string)(((TreeViewItem)Items[x]).Header) == OwnerName)
-                    {
-                        OwnerItem = (TreeViewItem)Items[x];
-                        break;
-                    }
-                }
-                #endregion
-                if (!Inner[OwnerName].ContainsKey(BotName))
-                {
-                    Inner[OwnerName].Add(BotName, new Dictionary<string, string>());
-                    OwnerItem.Items.Add(new TreeViewItem()
-                    {
-                        Header = BotName,
-                    });
-                    // Only update tooltips if we've added a new Bot
-                    #region Update Category ToolTips (Bot)
-                    if (OwnerItem.ToolTip != null)
-                    {
-                        OwnerItem.ToolTip = "Bots: " + (Convert.ToInt32(Split((string)OwnerItem.ToolTip, ' ')[1]) + 1); // Add one to the current bot number (have to extract it from the string)
-                    }
-                    else
-                    {
-                        OwnerItem.ToolTip = "Bots: 1";
-                    }
-                    #endregion
-                }
-                #region Find BotItem
-                TreeViewItem BotItem = null;
-                for (int x = 0; x < OwnerItem.Items.Count; x++)
-                {
-                    if ((string)(((TreeViewItem)OwnerItem.Items[x]).Header) == BotName)
-                    {
-                        BotItem = (TreeViewItem)OwnerItem.Items[x];
-                        break;
-                    }
-                }
-                #endregion
+                BotTreeViewItem BotParent;
+                AddBot(OwnerName, BotName, out BotParent);
+
                 bool AddedVersionItem = false;
-                TreeViewItem VersionItem = new TreeViewItem();
+                VersionTreeViewItem VersionItem = new VersionTreeViewItem(Version);
                 if (!Inner[OwnerName][BotName].ContainsKey(Version))    // Doesn't exist already - add it
                 {
                     Inner[OwnerName][BotName].Add(Version, BotPath);
                     #region Create and Insert VersionItem
-                    VersionItem = new TreeViewItem();
-                    BotItem.Items.Add(VersionItem);
+                    BotParent.Items.Add(VersionItem);
                     #endregion
 
                     // Only update tooltips if we've added a new Version
                     #region Update Category ToolTips (Version)
-                    if (BotItem.ToolTip != null)
+                    try
                     {
-                        BotItem.ToolTip = "Versions: " + (Convert.ToInt32(Split((string)OwnerItem.ToolTip, ' ')[1]) + 1); // Add one to the current bot number (have to extract it from the string)
+                        BotParent.ToolTip = "Versions: " + (Convert.ToInt32(Split((string)BotParent.ToolTip, ' ')[1]) + 1); // Add one to the current bot number (have to extract it from the string)
                     }
-                    else
+                    catch
                     {
-                        BotItem.ToolTip = "Versions: 1";
+                        BotParent.ToolTip = "Versions: 1";
                     }
                     #endregion
 
@@ -238,22 +281,18 @@ namespace Arena.UI
                 else                                                    // Does exist already - overwrite it
                 {
                     Inner[OwnerName][BotName][Version] = BotPath;
-                }
-                #region Find VersionItem
-                if (!AddedVersionItem)
-                {
-                    for (int x = 0; x < BotItem.Items.Count; x++)
+                    foreach (VersionTreeViewItem Item in BotParent.Items)
                     {
-                        if ((string)((TreeViewItem)BotItem.Items[x]).Header == Version)
+                        if ((string)Item.Header == Version)
                         {
-                            VersionItem = (TreeViewItem)BotItem.Items[x];
+                            VersionItem = Item;
+                            break;
                         }
                     }
                 }
-                #endregion
-                VersionItem.Header = Version;
                 VersionItem.ToolTip = "Path: " + BotPath;
-                VersionItem.ContextMenu = VersionContextMenu;
+
+                New = VersionItem;
 
                 return AddedVersionItem;
 
@@ -261,7 +300,7 @@ namespace Arena.UI
             }
             else
             {
-                return (bool)Dispatcher.Invoke((Func<string, string, string, string, bool>)AddBotVersion, new object[] { OwnerName, BotName, Version, BotPath });
+                return (bool)Dispatcher.Invoke((AddVersionDelegate)AddVersion, new object[] { OwnerName, BotName, Version, BotPath, New });
             }
         }
         #endregion
