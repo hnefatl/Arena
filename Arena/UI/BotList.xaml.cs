@@ -28,13 +28,17 @@ namespace Arena.UI
         {
             InitializeComponent();
 
-            BaseContextMenu = new ContextMenu();
-            OwnerContextMenu = new ContextMenu();
-            BotContextMenu = new ContextMenu();
-            VersionContextMenu = new ContextMenu();
+            Inner = new Dictionary<string, Dictionary<string, Dictionary<string, string>>>();
+        }
+
+        public void SetContextMenus(ContextMenu BaseContextMenu, ContextMenu OwnerContextMenu, ContextMenu BotContextMenu, ContextMenu VersionContextMenu)
+        {
+            this.BaseContextMenu = BaseContextMenu;
+            this.OwnerContextMenu = OwnerContextMenu;
+            this.BotContextMenu = BotContextMenu;
+            this.VersionContextMenu = VersionContextMenu;
 
             ContextMenu = BaseContextMenu;
-            Inner = new Dictionary<string, Dictionary<string, Dictionary<string, string>>>();
         }
 
         #region Add Methods

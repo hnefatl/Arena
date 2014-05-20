@@ -3,6 +3,6 @@
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 	<Grid>
         <Rectangle x:Name="Cover" Visibility="Hidden" Opacity="0.5" Fill="White" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-        <ProgressBar x:Name="Bar" Visibility="Hidden" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <ProgressBar x:Name="Bar" Visibility="Hidden" Width="250" Height="25" HorizontalAlignment="Center" VerticalAlignment="Center"/>
     </Grid>
 </UserControl>

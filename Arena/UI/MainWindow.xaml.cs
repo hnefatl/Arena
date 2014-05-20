@@ -17,38 +17,10 @@ using System.ComponentModel;
 using System.Xml;
 
 using Arena.Logic;
+using Arena.UI.Dialogs;
 
 namespace Arena.UI
 {
-    #region BotTreeViewItem
-    public class BotTreeViewItem
-        : TreeViewItem
-    {
-        public Bot Inner
-        {
-            get
-            {
-                return _Inner;
-            }
-            set
-            {
-                _Inner = value;
-                Header = _Inner.Version;
-                ToolTip = _Inner.ToString();
-            }
-        }
-        protected Bot _Inner;
-
-        public BotTreeViewItem()
-        {
-        }
-        public BotTreeViewItem(Bot Rep)
-        {
-            Inner = Rep;
-        }
-    }
-    #endregion
-
     public partial class MainWindow : Window
     {
         /// <summary>
@@ -60,38 +32,96 @@ namespace Arena.UI
         public MainWindow()
         {
             BotSaveFile = "SavedBots.xml";
-
-            Initialized += new EventHandler((object sender, EventArgs e) =>
-                                            {
-                                                Task.Factory.StartNew(new Action(WindowInitialised));
-                                            });
-
-            Closing += new System.ComponentModel.CancelEventHandler((object sender, System.ComponentModel.CancelEventArgs e) =>
-                                                                    {
-                                                                        Task.Factory.StartNew(new Action(WindowClosing));
-                                                                    });
+            AllBots = new List<Bot>();
 
             InitializeComponent();
+        }
 
+        protected override void OnInitialized(EventArgs e)
+        {
             #region Prepare BotList ContextMenus
-            Bots.BaseContextMenu = new ContextMenu();
-            Bots.BaseContextMenu.Items.Add(new MenuItem()
-            {
-                Header = "Add Owner",
-            });
-            ((MenuItem)Bots.BaseContextMenu.Items[0]).Click += AddOwnerHandler;
-
+            #region BaseContextMenu
+            ContextMenu BaseContextMenu = new ContextMenu();
+            #region AddOwner
+            MenuItem AddOwner = new MenuItem();
+            AddOwner.Width = double.NaN;
+            AddOwner.Height = double.NaN;
+            AddOwner.Header = "Add Owner";
+            AddOwner.Click += AddOwnerHandler;
+            BaseContextMenu.Items.Add(AddOwner);
             #endregion
+            #endregion
+
+            #region OwnerContextMenu
+            ContextMenu OwnerContextMenu = new ContextMenu();
+            #region AddBot
+            MenuItem AddBot = new MenuItem();
+            AddBot.Width = double.NaN;
+            AddBot.Height = double.NaN;
+            AddBot.Header = "Add Bot";
+            AddBot.Click += AddBotEventHandler;
+            OwnerContextMenu.Items.Add(AddBot);
+            #endregion
+            #endregion
+
+            ContextMenu BotContextMenu = new ContextMenu();
+
+            ContextMenu VersionContextMenu = new ContextMenu();
+
+
+            Bots.SetContextMenus(BaseContextMenu, OwnerContextMenu, BotContextMenu, VersionContextMenu);
+            #endregion
+
+            WindowInitialised();
+
+            base.OnInitialized(e);
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            Task.Factory.StartNew(new Action(WindowClosing));
+
+            base.OnClosing(e);
         }
 
         protected void AddOwnerHandler(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show(sender.GetType().ToString());
+            StringInputDialog Dialog = new StringInputDialog();
+            Dialog.Prompt = "Owner Name:";
+            bool? Result = Dialog.ShowDialog();
+            if (Result.HasValue && Result.Value) // Pressed Ok
+            {
+                if (!Bots.AddOwner(Dialog.Input)) // Add the owner
+                {
+                    MessageBox.Show("An Owner with that name already exists.", "Error");
+                }
+            }
+            else
+            {
+                return;
+            }
+        }
+        protected void AddBotEventHandler(object sender, RoutedEventArgs e)
+        {
+            StringInputDialog Dialog = new StringInputDialog();
+            Dialog.Prompt = "Bot Name:";
+            bool? Result = Dialog.ShowDialog();
+            if (Result.HasValue && Result.Value) // Pressed Ok
+            {
+                if (!Bots.AddOwner(Dialog.Input)) // Add the owner
+                {
+                    MessageBox.Show("A bot with that name already exists under this owner.", "Error");
+                }
+            }
+            else
+            {
+                return;
+            }
         }
 
         protected void WindowInitialised()
         {
-            LoadBots();
+            Task.Factory.StartNew(LoadBots);
         }
         protected void WindowClosing()
         {
@@ -114,9 +144,17 @@ namespace Arena.UI
             }
             try
             {
+                Cover.SetVisible(true);
                 XmlDocument LoadFile = new XmlDocument();
                 LoadFile.Load(BotSaveFile);
                 LoadFile.Normalize();
+
+                Cover.ExecuteOnBar((BarExecutable)((ProgressBar Bar) =>
+                {
+                    Bar.Minimum = 0;
+                    Bar.Maximum = LoadFile.SelectNodes("//Version").Count;
+                    Bar.Value = 0;
+                }));
 
                 XmlNodeList Owners = LoadFile.SelectSingleNode("/SavedBots").SelectNodes("Owner");
                 for (int x = 0; x < Owners.Count; x++)
@@ -132,6 +170,11 @@ namespace Arena.UI
                             string Version = Versions[z].Attributes["Value"].Value;
                             string BotPath = Versions[z].InnerText;
                             this.Bots.AddBotVersion(OwnerName, BotName, Version, BotPath);
+
+                            Cover.ExecuteOnBar((BarExecutable)((ProgressBar Bar) =>
+                            {
+                                Bar.Value++;
+                            }));
                         }
                     }
                 }
@@ -140,21 +183,11 @@ namespace Arena.UI
             {
                 throw new Exception("Failed to load all bots.");
             }
-        }
-
-        void BotSelected(object sender, MouseButtonEventArgs e)
-        {
-            try
+            finally
             {
-                Bot InnerBot = ((BotTreeViewItem)sender).Inner;
-                MessageBox.Show("Selected");
-            }
-            catch
-            {
-                return;
+                Cover.SetVisible(false);
             }
         }
-
         public void SaveBots()
         {
             lock (AllBots)
